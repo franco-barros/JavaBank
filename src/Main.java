@@ -1,21 +1,45 @@
-import java.util.ArrayList;
 import java.util.Scanner;
+import bank.Bank;
+import bank.BankAccount;
+import bank.SavingsAccount;
+import user.User;
+import java.text.DecimalFormat;
 
 public class Main {
-    public static void main(String[] args) {
-        // Instancia de cuenta bancaria
-        BankAccount account = new BankAccount("123456789", 1500.75, "1234");
 
-        // Entrada del usuario para el PIN
+    private static final DecimalFormat df = new DecimalFormat("#.##");
+
+    public static void main(String[] args) {
+        // Crear cuentas
+        BankAccount account1 = new BankAccount("123456789", 1500.75);
+        SavingsAccount account2 = new SavingsAccount("987654321", 2500.50, 0.05); // Tasa de interés del 5%
+        BankAccount account3 = new BankAccount("1011121314", 0.50);
+        BankAccount account4 = new BankAccount("1516171819", 500.50);
+
+        // Crear usuarios
+        User user1 = new User("Juan Perez", "1234", account1);
+        User user2 = new User("Nicolas Roque", "8888", account2); // Cuenta con SavingsAccount
+        User user3 = new User("Roman Garcia", "8080", account3);
+        User user4 = new User("Ana Garcia", "5678", account4);
+
+        // Crear banco y añadir usuarios
+        Bank bank = new Bank();
+        bank.addUser(user1);
+        bank.addUser(user2);
+        bank.addUser(user3);
+        bank.addUser(user4);
+
+
         Scanner scanner = new Scanner(System.in);
         System.out.println("Ingrese su PIN:");
         String inputPin = scanner.nextLine();
 
-        // Intentar autenticar al usuario
-        if (account.authenticateUser(inputPin)) {
-            System.out.println("Acceso Concedido");
+        User authenticatedUser = bank.authenticateUser(inputPin);
 
-            // Operaciones bancarias
+        if (authenticatedUser != null) {
+            System.out.println("Acceso concedido para " + authenticatedUser.getName());
+            BankAccount userAccount = authenticatedUser.getAccount();
+
             boolean exit = false;
             while (!exit) {
                 System.out.println("\nSeleccione una opción:");
@@ -23,84 +47,87 @@ public class Main {
                 System.out.println("2. Retirar");
                 System.out.println("3. Ver historial de transacciones");
                 System.out.println("4. Ver balance actual");
-                System.out.println("5. Salir");
 
-                // Opción del menú
-                String menuOption = scanner.nextLine();
-                if (!isValidNumber(menuOption, false)) {
-                    System.out.println("Opción inválida. Por favor, seleccione un número entre 1 y 5.");
-                    continue;
+                // Mostrar la opción 5 de acuerdo al tipo de cuenta
+                if (userAccount instanceof SavingsAccount) {
+                    System.out.println("5. Aplicar interés");
+                    System.out.println("6. Salir");
+                } else {
+                    System.out.println("5. Salir");
                 }
 
-                int option = Integer.parseInt(menuOption);
-
-                switch (option) {
-                    case 1: // Depositar
-                        System.out.println("Ingrese el monto a depositar:");
-                        String depositInput = scanner.nextLine();
-                        if (isValidNumber(depositInput, true)) {
-                            double deposit = Double.parseDouble(depositInput);
-                            account.deposit(deposit);
-                        } else {
-                            System.out.println("Entrada inválida. Ingrese un número válido (por ejemplo: 2.75).");
-                        }
+                String menuOption = scanner.nextLine();
+                switch (menuOption) {
+                    case "1":
+                        // Validación para el monto a depositar
+                        double deposit = getValidAmount(scanner, "depositar");
+                        userAccount.deposit(deposit);
                         break;
 
-                    case 2: // Retirar
-                        System.out.println("Ingrese el monto a retirar:");
-                        String withdrawInput = scanner.nextLine();
-                        if (isValidNumber(withdrawInput, true)) {
-                            double withdraw = Double.parseDouble(withdrawInput);
-                            account.withdraw(withdraw);
-                        } else {
-                            System.out.println("Entrada inválida. Ingrese un número válido (por ejemplo: 12.75).");
-                        }
+                    case "2":
+                        // Validación para el monto a retirar
+                        double withdraw = getValidAmount(scanner, "retirar");
+                        userAccount.withdraw(withdraw);
                         break;
 
-                    case 3: // Ver historial
+                    case "3":
                         System.out.println("Historial de transacciones:");
-                        ArrayList<Double> transactions = account.getTransactionHistory();
-                        if (transactions.isEmpty()) {
-                            System.out.println("No hay transacciones registradas.");
-                        } else {
-                            for (int i = 0; i < transactions.size(); i++) {
-                                String type = (transactions.get(i) > 0) ? "Depósito" : "Retiro";
-                                System.out.println((i + 1) + ": " + type + " de $" + Math.abs(transactions.get(i)));
-                            }
+                        for (double transaction : userAccount.getTransactionHistory()) {
+                            String type = transaction > 0 ? "Depósito" : "Retiro";
+                            System.out.println(type + " de $" + Math.abs(transaction));
                         }
                         break;
 
-                    case 4: // Ver balance
-                        System.out.println("Su balance actual es: $" + account.getBalance());
+                    case "4":
+                        System.out.println("Balance actual: $" + df.format(userAccount.getBalance()));
                         break;
 
-                    case 5: // Salir
-                        System.out.println("Gracias por usar el cajero JavaBank. Hasta luego :)");
-                        exit = true;
+                    case "5":
+                        if (userAccount instanceof SavingsAccount) {
+                            // Solo las SavingsAccount pueden aplicar interés
+                            SavingsAccount savingsAccount = (SavingsAccount) userAccount;
+                            savingsAccount.applyInterest(); // Aplicar interés
+                        } else {
+                            System.out.println("Gracias por usar el cajero JavaBank.");
+                            exit = true;
+                        }
+                        break;
+
+                    case "6":
+                        if (userAccount instanceof SavingsAccount) {
+                            System.out.println("Gracias por usar el cajero JavaBank.");
+                            exit = true;
+                        }
                         break;
 
                     default:
                         System.out.println("Opción no válida. Intente de nuevo.");
                 }
             }
-        } else {
-            System.out.println("Acceso Denegado. Se ha superado el número de intentos.");
-        }
 
+        } else {
+            System.out.println("Acceso Denegado. PIN incorrecto.");
+        }
         scanner.close();
     }
 
-
-    public static boolean isValidNumber(String input, boolean allowDecimal) {
-        try {
-            if (allowDecimal) {
-                Double.parseDouble(input); // Intenta convertirlo a double
-            } else {
-                Integer.parseInt(input); // Intenta convertirlo a entero
+    private static double getValidAmount(Scanner scanner, String action) {
+        double amount = -1;
+        boolean valid = false;
+        while (!valid) {
+            System.out.println("Ingrese el monto a " + action);
+            String input = scanner.nextLine();
+            try {
+                amount = Double.parseDouble(input);
+                if (amount > 0) {
+                    valid = true; // Monto válido
+                } else {
+                    System.out.println("El monto debe ser un número valido, ejemplo 15.60.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Entrada inválida. Por favor ingrese un número válido.");
             }
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
         }
+        return amount;
     }
 }
