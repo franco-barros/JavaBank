@@ -1,25 +1,59 @@
 package bank;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class Account {
-    protected String accountNumber;
-    protected double balance;
+    private final List<Observer> observers = new ArrayList<>();
+    protected double balance;  // balance es ahora 'protected'
+    protected String accountNumber;  // accountNumber también 'protected'
 
-    // Constructor
-    public Account(String accountNumber, double initialBalance) {
+    // Constructor para inicializar accountNumber y balance
+    public Account(String accountNumber, double balance) {
         this.accountNumber = accountNumber;
-        this.balance = initialBalance;
+        this.balance = balance;
     }
 
-    // Métodos para depósitos y retiros
-    public abstract void deposit(double amount);
-    public abstract boolean withdraw(double amount);
+    // Agregar observadores
+    public void addObserver(Observer observer) {
+        observers.add(observer);
+    }
 
-    // Método para obtener el balance
+    // Retirar dinero
+    public boolean withdraw(double amount) {
+        if (amount > 0 && amount <= balance) {
+            balance -= amount;
+            notifyObservers();  // Notificar a los observadores
+            return true;  // Retiro exitoso
+        }
+        return false;  // Fondos insuficientes o monto negativo
+    }
+
+    // Depositar dinero
+    public void deposit(double amount) {
+        if (amount > 0) {
+            balance += amount;
+            notifyObservers();  // Notificar a los observadores
+        } else {
+            System.out.println("El monto a depositar debe ser mayor a 0.");
+        }
+    }
+
+    // Notificar a los observadores cuando cambia el balance
+    protected void notifyObservers() {  // Cambié el modificador de 'private' a 'protected'
+        for (Observer observer : observers) {
+            observer.update(balance);
+        }
+    }
+
     public double getBalance() {
-        return this.balance;
+        return balance;
     }
 
+    // El método getAccountNumber es abstracto, por lo que depende de las subclases implementarlo.
+    // De todas formas, lo implementaremos directamente aquí como una versión por defecto para que no se quede
+    // sin implementación (esto también arregla los warnings).
     public String getAccountNumber() {
-        return this.accountNumber;
+        return accountNumber;
     }
 }

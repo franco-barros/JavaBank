@@ -3,9 +3,9 @@ package user;
 import bank.BankAccount;
 
 public class User {
-    private String name;
-    private String pin;
-    private BankAccount account;
+    private final String name;
+    private final String pin;
+    private final BankAccount account;
 
     public User(String name, String pin, BankAccount account) {
         this.name = name;
@@ -18,8 +18,9 @@ public class User {
     }
 
     public String getPin() {
-        return pin;
+        return this.pin;
     }
+
 
     public BankAccount getAccount() {
         return account;

@@ -17,5 +17,5 @@ Pequeño sistema bancario desarrollado en Java para gestionar depósitos, retiro
 2. Asegúrate de tener instalado JDK 21.
 3. Ejecuta el programa desde la terminal con:
    ```bash
-   javac Main.java
-   java Main
+   javac main.Main.java
+   java main.Main
