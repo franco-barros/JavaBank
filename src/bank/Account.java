@@ -50,9 +50,6 @@ public abstract class Account {
         return balance;
     }
 
-    // El método getAccountNumber es abstracto, por lo que depende de las subclases implementarlo.
-    // De todas formas, lo implementaremos directamente aquí como una versión por defecto para que no se quede
-    // sin implementación (esto también arregla los warnings).
     public String getAccountNumber() {
         return accountNumber;
     }

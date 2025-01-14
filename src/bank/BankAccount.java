@@ -3,25 +3,26 @@ package bank;
 import java.util.ArrayList;
 import java.text.DecimalFormat;
 
-public class BankAccount extends Account {
-    private final ArrayList<Double> transactionHistory;  // Lista para registrar las transacciones
+public class BankAccount extends Account implements Subject {
+    private final ArrayList<Double> transactionHistory;
+    private final ArrayList<Observer> observers;  // Lista para los observadores
 
-    // DecimalFormat para formatear con 2 decimales
     private static final DecimalFormat df = new DecimalFormat("#.##");
 
     public BankAccount(String accountNumber, double balance) {
-        super(accountNumber, balance);  // Llamada al constructor de la clase Account
+        super(accountNumber, balance);
         this.transactionHistory = new ArrayList<>();
+        this.observers = new ArrayList<>();
     }
 
     @Override
     public void deposit(double amount) {
         if (amount > 0) {
-            balance += amount;  // Modificar el balance
-            transactionHistory.add(amount);  // Añadir el depósito a la historia
+            balance += amount;
+            transactionHistory.add(amount);
             System.out.println("Depósito de $" + df.format(amount) + " exitoso.");
             System.out.println("Balance actual: $" + df.format(balance));
-            notifyObservers();  // Notificar a los observadores del cambio en el balance
+            notifyObservers();
         } else {
             System.out.println("El monto a depositar debe ser mayor a 0.");
         }
@@ -30,11 +31,11 @@ public class BankAccount extends Account {
     @Override
     public boolean withdraw(double amount) {
         if (amount > 0 && amount <= balance) {
-            balance -= amount;  // Modificar el balance
-            transactionHistory.add(-amount);  // Añadir el retiro a la historia (negativo)
+            balance -= amount;
+            transactionHistory.add(-amount);
             System.out.println("Retiro de $" + df.format(amount) + " exitoso.");
             System.out.println("Balance actual: $" + df.format(balance));
-            notifyObservers();  // Notificar a los observadores del cambio en el balance
+            notifyObservers();
             return true;
         } else {
             System.out.println("Fondos insuficientes o monto negativo.");
@@ -42,13 +43,30 @@ public class BankAccount extends Account {
         }
     }
 
-    // Obtener el historial de transacciones
+    @Override
+    public void attach(Observer observer) {
+        observers.add(observer);  // Añadir observador
+    }
+
+    @Override
+    public void detach(Observer observer) {
+        observers.remove(observer);  // Eliminar observador
+    }
+
+    @Override
+    public void notifyObservers() {
+        // Notificar a todos los observadores registrados
+        for (Observer observer : observers) {
+            observer.update(balance);  // Pasamos el balance
+        }
+    }
+
     public ArrayList<Double> getTransactionHistory() {
         return transactionHistory;
     }
 
     @Override
     public String getAccountNumber() {
-        return accountNumber;  // Regresamos el accountNumber heredado de Account
+        return accountNumber;
     }
 }

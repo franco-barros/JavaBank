@@ -3,7 +3,6 @@ package main;
 import java.util.Scanner;
 import java.text.DecimalFormat;
 import bank.*;
-import payment.*;
 import user.User;
 import config.ConfigManager;
 import bank.auth.PinAuthStrategy;
@@ -17,39 +16,66 @@ public class Main {
     public static void main(String[] args) {
         // Cargar configuraciones al inicio del programa
         ConfigManager configManager = ConfigManager.getInstance();
-
-        // Ejemplo: Obtener valores del archivo config.properties
         String welcomeMessage = configManager.getProperty("welcome.message");
         String bankName = configManager.getProperty("bank.name");
 
-        // Mostrar un mensaje de bienvenida con los valores obtenidos
+        // Mostrar mensaje de bienvenida
         if (welcomeMessage != null) {
             System.out.println(welcomeMessage.replace("{bankName}", bankName != null ? bankName : "JavaBank"));
         } else {
             System.out.println("Bienvenido a JavaBank.");
         }
 
-        // Crear el cajero (ATM) y configurar la estrategia de autenticación
-        ATM atm = new ATM();
+        // Crear banco y usuarios
+        BankAccount account1 = new BankAccount("123456789", 1500.75);
+        account1.attach(new EmailNotifier());
+        account1.attach(new SMSNotifier());
 
-        // Configurar el menú para la selección de método de autenticación
+        SavingsAccount account2 = new SavingsAccount("987654321", 2500.50, 0.05);
+        account2.attach(new EmailNotifier());
+        account2.attach(new SMSNotifier());
+
+        BankAccount account3 = new BankAccount("1011121314", 0.50);
+        account3.attach(new EmailNotifier());
+        account3.attach(new SMSNotifier());
+
+        BankAccount account4 = new BankAccount("1516171819", 500.50);
+        account4.attach(new EmailNotifier());
+        account4.attach(new SMSNotifier());
+
+        User user1 = new User("Juan Perez", "1234", "password123", account1);
+        User user2 = new User("Nicolas Roque", "8888", "password456", account2);
+        User user3 = new User("Roman Garcia", "8080", "password789", account3);
+        User user4 = new User("Ana Garcia", "5678", "password101", account4);
+
+        Bank bank = new Bank();
+        bank.addUser(user1);
+        bank.addUser(user2);
+        bank.addUser(user3);
+        bank.addUser(user4);
+
+        // Selección de usuario
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Seleccione su método de autenticación para el ATM:");
-        System.out.println("1. PIN");
-        System.out.println("2. Contraseña");
-        System.out.println("3. Biometría");
+        System.out.println("Seleccione su usuario:");
+        System.out.println("1. Juan Perez ");
+        System.out.println("2. Nicolas Roque ");
+        System.out.println("3. Roman Garcia ");
+        System.out.println("4. Ana Garcia ");
 
-        String choice = scanner.nextLine();
-
-        switch (choice) {
+        String userChoice = scanner.nextLine();
+        User selectedUser ;
+        switch (userChoice) {
             case "1":
-                atm.setAuthStrategy(new PinAuthStrategy("1234")); // Usar PIN por defecto
+                selectedUser = user1;
                 break;
             case "2":
-                atm.setAuthStrategy(new PasswordAuthStrategy("password123")); // Contraseña por defecto
+                selectedUser = user2;
                 break;
             case "3":
-                atm.setAuthStrategy(new BiometricAuthStrategy("biometricData123")); // Biometría por defecto
+                selectedUser = user3;
+                break;
+            case "4":
+                selectedUser = user4;
                 break;
             default:
                 System.out.println("Opción no válida.");
@@ -57,86 +83,40 @@ public class Main {
                 return;
         }
 
-        // Realizar la autenticación en el cajero automático (ATM)
-        System.out.println("Ingrese su dato de autenticación:");
-        String inputData = scanner.nextLine();
-
-        boolean authenticated = atm.authenticateUser(inputData); // Se realiza autenticación en ATM
-
-        if (authenticated) {
-            System.out.println("Acceso concedido.");
-        } else {
-            System.out.println("Acceso Denegado.");
-            scanner.close();
-            return; // Terminar ejecución si no está autenticado
-        }
-
-        // Crear cuentas
-        BankAccount account1 = new BankAccount("123456789", 1500.75);
-        BankAccount account2 = new SavingsAccount("987654321", 2500.50, 0.05); // Tasa de interés del 5%
-        BankAccount account3 = new BankAccount("1011121314", 0.50);
-        BankAccount account4 = new BankAccount("1516171819", 500.50);
-
-        // Agregar observadores (por ejemplo, para notificaciones de SMS y Email)
-        account1.addObserver(new SMSNotifier());
-        account2.addObserver(new EmailNotifier());
-        account3.addObserver(new SMSNotifier());
-        account4.addObserver(new EmailNotifier());
-
-        // Crear usuarios
-        User user1 = new User("Juan Perez", "1234", account1);
-        User user2 = new User("Nicolas Roque", "8888", account2);
-        User user3 = new User("Roman Garcia", "8080", account3);
-        User user4 = new User("Ana Garcia", "5678", account4);
-
-        // Crear el banco y agregar usuarios
-        Bank bank = new Bank();
-        bank.addUser(user1);
-        bank.addUser(user2);
-        bank.addUser(user3);
-        bank.addUser(user4);
-
-        // Seleccionar la estrategia de autenticación para el banco
-        System.out.println("Seleccione el método de autenticación para el Banco:");
+        // Selección de método de autenticación para el usuario seleccionado
+        ATM atm = new ATM();
+        System.out.println("Seleccione su método de autenticación:");
         System.out.println("1. PIN");
         System.out.println("2. Contraseña");
         System.out.println("3. Biometría");
 
-        String bankAuthChoice = scanner.nextLine();
-
-        switch (bankAuthChoice) {
+        String authChoice = scanner.nextLine();
+        switch (authChoice) {
             case "1":
-                bank.setAuthStrategy(new PinAuthStrategy("1234")); // Usar PIN
+                atm.setAuthStrategy(new PinAuthStrategy(selectedUser.getPin()), selectedUser);
                 break;
             case "2":
-                bank.setAuthStrategy(new PasswordAuthStrategy("password123")); // Usar Contraseña
+                atm.setAuthStrategy(new PasswordAuthStrategy(selectedUser.getPassword()), selectedUser);
                 break;
             case "3":
-                bank.setAuthStrategy(new BiometricAuthStrategy("biometricData123")); // Usar Biometría
+                atm.setAuthStrategy(new BiometricAuthStrategy("biometricData123"), selectedUser);
                 break;
             default:
-                System.out.println("Método no válido.");
-                break;
+                System.out.println("Opción no válida.");
+                scanner.close();
+                return;
         }
 
-        // Realizar autenticación del usuario en el banco
-        System.out.println("Ingrese su dato de autenticación (PIN o Contraseña o Biometría):");
-        String bankInput = scanner.nextLine();
-        User authenticatedUser = bank.authenticateUser(bankInput);
+        // Autenticación del usuario seleccionado
+        System.out.println("Ingrese su dato de autenticación:");
+        String inputData = scanner.nextLine();
+        boolean authenticated = atm.authenticateUser(inputData);
 
-        if (authenticatedUser != null) {
-            System.out.println("Acceso concedido para " + authenticatedUser.getName());
-            BankAccount userAccount = authenticatedUser.getAccount();
+        if (authenticated) {
+            System.out.println("Acceso concedido para " + selectedUser.getName());
+            BankAccount userAccount = selectedUser.getAccount();
 
-            // Realizar pago
-            System.out.println("Ingrese el monto para el pago:");
-            double amountToPay = getValidAmount(scanner, "pagar");
-
-            // Crear cuenta de PayPal y adaptar el pago
-            PayPal payPal = new PayPal();
-            PaymentGateaway paymentGateaway = new PayPalAdapter(payPal);
-            paymentGateaway.pay(amountToPay); // Esto usa el adaptador para enviar el pago por PayPal
-
+            // Menú interactivo
             boolean exit = false;
             while (!exit) {
                 System.out.println("\nSeleccione una opción:");
@@ -145,7 +125,6 @@ public class Main {
                 System.out.println("3. Ver historial de transacciones");
                 System.out.println("4. Ver balance actual");
 
-                // Mostrar opción para aplicar intereses si es cuenta de ahorro
                 if (userAccount instanceof SavingsAccount) {
                     System.out.println("5. Aplicar interés");
                     System.out.println("6. Salir");

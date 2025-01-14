@@ -1,9 +1,11 @@
 package bank;
 
 import bank.auth.AuthStrategy;
+import user.User;
 
 public class BiometricAuthStrategy implements AuthStrategy {
     private final String biometricData;
+    private User user; // Usuario asociado
 
     // Constructor que inicializa los datos biométricos
     public BiometricAuthStrategy(String biometricData) {
@@ -18,5 +20,10 @@ public class BiometricAuthStrategy implements AuthStrategy {
         }
         return this.biometricData.equals(data);
     }
-}
 
+    // Implementación del método setUser(User user)
+    @Override
+    public void setUser(User user) {
+        this.user = user;
+    }
+}
